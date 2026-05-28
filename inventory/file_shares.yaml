@@ -1,0 +1,40 @@
+# Pilot wave — 2 file shares (TRD §2.4).
+# Drives the DataSync module — one location pair + one task per entry.
+
+file_shares:
+  - id: fs-finreports
+    name: finreports
+    protocol: nfs
+    nfs_version: NFSv3
+    source_server: netapp-01.corp.example.com
+    source_mount_path: /data/finreports
+    size_tb: 5
+    file_count: 2_100_000
+    target_service: efs
+    target_efs_throughput_mode: bursting
+    target_efs_performance_mode: generalPurpose
+    target_mount_path: /
+    verify_mode: BEST_EFFORT
+    schedule_cron: "cron(30 20 * * ? *)"   # 02:00 IST daily pre-cutover
+    bandwidth_limit_mbps_business_hours: 500
+    posix_permissions: PRESERVE
+    priority: P1
+
+  - id: fs-customerdata
+    name: customerdata
+    protocol: smb
+    smb_version: "3.0"
+    source_server: filsrv01.corp.example.com
+    source_share: customerdata
+    source_domain: CORP
+    source_user_secret_id: migration/pilot/source/smb/customerdata-svc
+    size_tb: 3
+    file_count: 1_400_000
+    target_service: fsx_windows
+    target_fsx_share: customerdata
+    target_fsx_throughput_mbps: 64
+    verify_mode: ONLY_FILES_TRANSFERRED
+    schedule_cron: "cron(30 20 * * ? *)"
+    bandwidth_limit_mbps_business_hours: 500
+    smb_acls: BEST_EFFORT
+    priority: P1

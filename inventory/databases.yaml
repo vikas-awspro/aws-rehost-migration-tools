@@ -1,0 +1,95 @@
+# Pilot wave — 5 databases (TRD §2.3).
+# Drives the DMS module — one DMS task is created per entry.
+
+databases:
+  - id: db-corebanking
+    name: COREBANKING_DB
+    source_engine: oracle
+    source_version: 19c
+    source_host: oracle-prod-01
+    source_port: 1521
+    source_sid: COREBANKING
+    size_tb: 4
+    target_engine: aurora-postgresql
+    target_version: "15.4"
+    migration_type: heterogeneous
+    sct_required: true
+    secrets_id: migration/pilot/source/oracle/corebanking
+    target_secret_id: migration/pilot/target/aurora-pg/corebanking
+    lob_mode: limited
+    lob_max_size_kb: 64
+    table_mapping_schema: COREBANKING
+
+  - id: db-riskanalytics
+    name: RISKANALYTICS_DB
+    source_engine: sqlserver
+    source_version: 2019
+    source_host: sqlsrv-prod-01
+    source_port: 1433
+    source_database: RISKANALYTICS_DB
+    size_gb: 1500
+    target_engine: sqlserver
+    target_version: "15.00"
+    migration_type: homogeneous
+    sct_required: false
+    secrets_id: migration/pilot/source/sqlserver/riskanalytics
+    target_secret_id: migration/pilot/target/rds-sqlserver/riskanalytics
+    lob_mode: limited
+    lob_max_size_kb: 64
+    cdc_method: ms_cdc
+    table_mapping_schema: dbo
+
+  - id: db-reporting
+    name: REPORTING_DB
+    source_engine: sqlserver
+    source_version: 2016
+    source_host: sqlsrv-prod-02
+    source_port: 1433
+    source_database: REPORTING_DB
+    size_gb: 800
+    target_engine: sqlserver
+    target_version: "15.00"
+    migration_type: homogeneous
+    sct_required: false
+    secrets_id: migration/pilot/source/sqlserver/reporting
+    target_secret_id: migration/pilot/target/rds-sqlserver/reporting
+    lob_mode: limited
+    lob_max_size_kb: 64
+    cdc_method: ms_cdc
+    table_mapping_schema: dbo
+
+  - id: db-customer
+    name: CUSTOMER_DB
+    source_engine: mysql
+    source_version: "8.0"
+    source_host: mysql-prod-01
+    source_port: 3306
+    source_database: customer_db
+    size_gb: 600
+    target_engine: aurora-mysql
+    target_version: "8.0.mysql_aurora.3.04.1"
+    migration_type: homogeneous
+    sct_required: false
+    secrets_id: migration/pilot/source/mysql/customer
+    target_secret_id: migration/pilot/target/aurora-mysql/customer
+    lob_mode: limited
+    lob_max_size_kb: 64
+    table_mapping_schema: customer_db
+
+  - id: db-product
+    name: PRODUCT_DB
+    source_engine: mysql
+    source_version: "5.7"
+    source_host: mysql-prod-02
+    source_port: 3306
+    source_database: product_db
+    size_gb: 400
+    target_engine: aurora-mysql
+    target_version: "8.0.mysql_aurora.3.04.1"
+    migration_type: homogeneous
+    sct_required: false
+    secrets_id: migration/pilot/source/mysql/product
+    target_secret_id: migration/pilot/target/aurora-mysql/product
+    lob_mode: limited
+    lob_max_size_kb: 64
+    table_mapping_schema: product_db

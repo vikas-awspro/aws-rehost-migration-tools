@@ -1,0 +1,117 @@
+# Pilot wave — 10 servers (TRD §2.2).
+# Edit this file and re-run `terraform apply` to add/remove servers from MGN scope.
+# Naming convention: <function>-<env>-<index>.  Priority drives the cutover schedule.
+
+servers:
+  - name: web-app-01
+    os: rhel8
+    vcpu: 4
+    ram_gb: 16
+    storage_gb: 100
+    application: Customer portal web tier
+    priority: P1
+    target_instance_type: t3.xlarge
+    target_subnet: app
+    dependencies: [db-corebanking, fs-finreports]
+
+  - name: web-app-02
+    os: rhel8
+    vcpu: 4
+    ram_gb: 16
+    storage_gb: 100
+    application: Customer portal web tier
+    priority: P1
+    target_instance_type: t3.xlarge
+    target_subnet: app
+    dependencies: [db-corebanking, fs-finreports]
+
+  - name: app-svc-01
+    os: rhel7
+    vcpu: 8
+    ram_gb: 32
+    storage_gb: 200
+    application: Core banking app service
+    priority: P1
+    target_instance_type: m5.2xlarge
+    target_subnet: app
+    dependencies: [db-corebanking]
+
+  - name: app-svc-02
+    os: centos7
+    vcpu: 8
+    ram_gb: 32
+    storage_gb: 200
+    application: Risk analytics service
+    priority: P2
+    target_instance_type: m5.2xlarge
+    target_subnet: app
+    dependencies: [db-riskanalytics]
+
+  - name: batch-01
+    os: centos7
+    vcpu: 4
+    ram_gb: 16
+    storage_gb: 150
+    application: Nightly batch processing
+    priority: P2
+    target_instance_type: m5.xlarge
+    target_subnet: app
+    dependencies: [db-corebanking, db-reporting]
+
+  - name: win-app-01
+    os: windows2019
+    vcpu: 4
+    ram_gb: 16
+    storage_gb: 200
+    application: Internal HR application
+    priority: P2
+    target_instance_type: m5.xlarge
+    target_subnet: app
+    join_domain: true
+    dependencies: []
+
+  - name: win-app-02
+    os: windows2019
+    vcpu: 4
+    ram_gb: 16
+    storage_gb: 200
+    application: Document management
+    priority: P2
+    target_instance_type: m5.xlarge
+    target_subnet: app
+    join_domain: true
+    dependencies: [fs-customerdata]
+
+  - name: win-app-03
+    os: windows2016
+    vcpu: 8
+    ram_gb: 32
+    storage_gb: 300
+    application: Financial reporting
+    priority: P1
+    target_instance_type: m5.2xlarge
+    target_subnet: app
+    join_domain: true
+    dependencies: [db-reporting, fs-finreports]
+
+  - name: db-proxy-01
+    os: rhel8
+    vcpu: 4
+    ram_gb: 16
+    storage_gb: 100
+    application: Database connection proxy
+    priority: P1
+    target_instance_type: t3.xlarge
+    target_subnet: app
+    dependencies: [db-corebanking]
+
+  - name: mon-svc-01
+    os: rhel8
+    vcpu: 4
+    ram_gb: 8
+    storage_gb: 100
+    application: Monitoring / Prometheus
+    priority: P3
+    target_instance_type: t3.large
+    target_subnet: app
+    dependencies: []

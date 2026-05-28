@@ -1,0 +1,37 @@
+name: terraform apply
+on:
+  push:
+    branches: [main]
+    paths:
+      - "terraform/**"
+      - "inventory/**"
+      - "scripts/mgn/post_launch/**"
+      - ".github/workflows/terraform-apply.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: terraform-apply-pilot
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    environment: pilot-apply   # protected — requires reviewer approval
+    defaults:
+      run:
+        working-directory: terraform/environments/pilot
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_PILOT }}
+          aws-region: ap-south-1
+      - run: terraform init -input=false
+      - run: terraform apply -input=false -auto-approve

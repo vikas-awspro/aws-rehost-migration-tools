@@ -1,0 +1,53 @@
+schemaVersion: '2.2'
+description: |
+  Post-launch action for migrated Linux EC2s (MGN-FR-07). Rewrites application
+  config files with the new AWS-side endpoints, then restarts the application
+  service. Endpoint values are pulled from SSM Parameter Store so this document
+  is reusable across all Linux migrated servers.
+parameters:
+  ConfigFilePath:
+    type: String
+    description: Absolute path to the application config file.
+    default: /etc/app/config.properties
+  ServiceName:
+    type: String
+    description: systemd unit to restart after config rewrite.
+    default: app-service
+  DbEndpointParam:
+    type: String
+    description: SSM Parameter Store path holding the new database endpoint.
+    default: /migration/pilot/db/corebanking/endpoint
+  EfsEndpointParam:
+    type: String
+    description: SSM Parameter Store path holding the new EFS DNS name.
+    default: /migration/pilot/efs/finreports/dns
+
+mainSteps:
+  - name: UpdateAppConfig
+    action: aws:runShellScript
+    inputs:
+      runCommand:
+        - |
+          set -euo pipefail
+          REGION=$(curl -fs http://169.254.169.254/latest/meta-data/placement/region)
+          DB_ENDPOINT=$(aws ssm get-parameter --name '{{ DbEndpointParam }}' --region "$REGION" --query 'Parameter.Value' --output text)
+          EFS_ENDPOINT=$(aws ssm get-parameter --name '{{ EfsEndpointParam }}' --region "$REGION" --query 'Parameter.Value' --output text)
+
+          if [[ ! -f '{{ ConfigFilePath }}' ]]; then
+              echo "Config file '{{ ConfigFilePath }}' not found — skipping rewrite."
+              exit 0
+          fi
+
+          cp '{{ ConfigFilePath }}' '{{ ConfigFilePath }}.pre-migration'
+
+          sed -i \
+              -e "s|OLD_DB_ENDPOINT|${DB_ENDPOINT}|g" \
+              -e "s|OLD_EFS_ENDPOINT|${EFS_ENDPOINT}|g" \
+              '{{ ConfigFilePath }}'
+
+          echo "Config rewritten. Diff vs. pre-migration:"
+          diff '{{ ConfigFilePath }}.pre-migration' '{{ ConfigFilePath }}' || true
+
+          systemctl restart '{{ ServiceName }}'
+          systemctl is-active --quiet '{{ ServiceName }}'
+          echo "✓ {{ ServiceName }} restarted and is active."

@@ -1,0 +1,40 @@
+schemaVersion: '2.2'
+description: |
+  Post-launch action for migrated Windows EC2s. Joins the instance to the
+  configured Active Directory domain (AWS Managed AD over Direct Connect),
+  rewrites application config with new endpoints, then restarts services.
+parameters:
+  DomainName:
+    type: String
+    description: Fully qualified domain name to join.
+    default: corp.example.com
+  OU:
+    type: String
+    description: Distinguished name of the target OU.
+    default: 'OU=Migrated,OU=Servers,DC=corp,DC=example,DC=com'
+  JoinCredentialsSecretId:
+    type: String
+    description: Secrets Manager secret holding {username, password} for the join account.
+    default: migration/pilot/ad/domain-join
+
+mainSteps:
+  - name: JoinDomain
+    action: aws:runPowerShellScript
+    inputs:
+      runCommand:
+        - |
+          $ErrorActionPreference = 'Stop'
+          $Region = (Invoke-RestMethod -Uri http://169.254.169.254/latest/meta-data/placement/region)
+          $Secret = (aws secretsmanager get-secret-value --secret-id '{{ JoinCredentialsSecretId }}' --region $Region --query SecretString --output text) | ConvertFrom-Json
+          $Cred = New-Object System.Management.Automation.PSCredential(
+              "{{ DomainName }}\$($Secret.username)",
+              (ConvertTo-SecureString $Secret.password -AsPlainText -Force)
+          )
+          Add-Computer -DomainName '{{ DomainName }}' -OUPath '{{ OU }}' -Credential $Cred -Force -PassThru -Verbose
+          Write-Output "Joined $env:COMPUTERNAME to {{ DomainName }}. Reboot will happen after this SSM document completes."
+
+  - name: Reboot
+    action: aws:runPowerShellScript
+    inputs:
+      runCommand:
+        - 'Restart-Computer -Force'

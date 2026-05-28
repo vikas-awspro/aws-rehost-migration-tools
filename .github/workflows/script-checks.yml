@@ -1,0 +1,34 @@
+name: script checks
+on:
+  pull_request:
+    paths:
+      - "scripts/**"
+      - "inventory/**"
+      - ".github/workflows/script-checks.yml"
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: scripts
+          severity: warning
+
+  yaml-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install yamllint
+      - run: yamllint -d "{extends: relaxed, rules: {line-length: {max: 200}}}" inventory scripts/mgn/post_launch
+
+  inventory-schema:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install pyyaml jsonschema
+      - run: python scripts/_ci/validate_inventory.py
