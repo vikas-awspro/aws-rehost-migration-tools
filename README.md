@@ -1,4 +1,4 @@
-# AWS Rehost Migration Tools
+# AWS Cloud Migration — Lift-and-Shift (Rehost) Automation for 1000+ Servers
 
 **Tooling, automation, and runbooks for a coordinated three-stream lift-and-shift to AWS — MGN for 300+ servers, DMS for 80+ databases (Oracle/SQL Server/MySQL), DataSync for 200+ TB of NFS and SMB file shares. This repo delivers Phase 1: tooling setup and pilot migration of 10 servers, 5 databases, and 2 file shares for a financial services customer, delivered as part of an AWS Professional Services engagement.**
 
